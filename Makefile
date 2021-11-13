@@ -1,19 +1,29 @@
 CC=gcc
 CFLAGS=-Wall -Werror # -g -march=native -std=gnu11 -fopt-info-vec
 LIBS=-lpthread
-INCLUDES="" # Add files later 
+SRCDIR=src
+BUILDDIR=build
 
 # Default target for make
-compile: main.c $(INCLUDES)
-	$(CC) -Iheaders $(CFLAGS) -o $@ $^ $(LIBS)
+all : compile_philo compile_readwrt compile_prodcons
 
-benchmark: compile
-	@echo "This is a benchmarking target"
+compile_philo:
+	$(CC) $(CFLAGS) -o $(BUILDDIR)/philosophes $(SRCDIR)/philosophes.c $(LIBS)
 
-%.o: %.c
-	$(CC) -Iheaders $(CFLAGS) -o $@ -c $<
+compile_readwrt:
+	$(CC) $(CFLAGS) -o $(BUILDDIR)/readwrt $(SRCDIR)/readwrt.c $(LIBS)
+
+compile_prodcons:
+	$(CC) $(CFLAGS) -o $(BUILDDIR)/prodcons $(SRCDIR)/prodcons.c $(LIBS)
+
+
+benchmark: all
+	sh ./benchmark_src/benchmark.sh > ./benchmark_src/Data/measures.csv
+	python ./benchmark_src/graphes.py 
 
 clean:
-	rm -f src/*.o
+	rm -f ./$(BUILDDIR)/*
+	rm -f benchmark_src/Data/*
+	rm -f benchmark_src/Graphs/*
 
 .PHONY: clean
