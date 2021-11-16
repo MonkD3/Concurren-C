@@ -1,41 +1,20 @@
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-
-#define WR_CYCLES 640 // Nombre de cycles des writers
-#define RD_CYCLES 2560 // Nombres de cycles des readers
-
-
-pthread_mutex_t mutex_readcount; // protège readcount
-pthread_mutex_t mutex_writecount; // protège writecount
-pthread_mutex_t z; // un seul reader en attente
-sem_t wsem;       // accès exclusif à la db
-sem_t rsem;       // pour bloquer des readers
-int readcount=0;
-int writecount=0;
-
-
-void error(int err, char *msg) {
-    fprintf(stderr,"%s a retourné %d message d'erreur : %s\n",msg,err,strerror(errno));
-    exit(EXIT_FAILURE);
-}
-
-void simulate_processing() {
-    // Simule la consommation de ressources CPU
-    while(rand() > RAND_MAX/10000);
-}
+#include "./headers/cmnfunc.h" // error(), simulate_processing()
+#include "./headers/readwrt.h" // reader(), writer()
 
 
 void * writer(void* args){
-    for (int i = 0; i < WR_CYCLES; i++) {
+    while (1) {
 
         // Le writer est censé "prévoir" les données à écrire ici.
 
         pthread_mutex_lock(&mutex_writecount);
             // section critique - writecount
+            if (write_total >= WR_CYCLES){
+                pthread_mutex_unlock(&mutex_writecount);
+                break;
+            }
+            write_total++;
+
             writecount++;
             if(writecount==1) {
             // premier writer arrive
@@ -63,20 +42,28 @@ void * writer(void* args){
 
 
 void * reader(void* args){
-    for (int i = 0; i < RD_CYCLES; i++) {
+    while(1) {
         pthread_mutex_lock(&z);
             // exclusion mutuelle, un seul reader en attente sur rsem
             sem_wait(&rsem);
+                pthread_mutex_lock(&mutex_readcount);
+                    // exclusion mutuelle, readercount
 
-            pthread_mutex_lock(&mutex_readcount);
-            // exclusion mutuelle, readercount
-            readcount++;
-            if (readcount==1) {
-                // arrivée du premier reader
-                sem_wait(&wsem);
-            }
-        pthread_mutex_unlock(&mutex_readcount);
-        sem_post(&rsem);  // libération du prochain reader
+                    if (read_total >= RD_CYCLES){
+                        pthread_mutex_unlock(&mutex_readcount);
+                        sem_post(&rsem);
+                        pthread_mutex_unlock(&z);
+                        break;
+                    }
+                    read_total++;
+
+                    readcount++;
+                    if (readcount==1) {
+                        // arrivée du premier reader
+                        sem_wait(&wsem);
+                    }
+                pthread_mutex_unlock(&mutex_readcount);
+            sem_post(&rsem);  // libération du prochain reader
         pthread_mutex_unlock(&z);
 
         simulate_processing();
@@ -100,11 +87,11 @@ void * reader(void* args){
 
 int main(int argc, char* argv[]){
 
-    int n_writer = atoi(argv[1]);
-    int n_reader = atoi(argv[2]);
+    int n_reader = atoi(argv[1]);
+    int n_writer = atoi(argv[2]);
 
     if ((n_writer <= 0) || (n_reader <= 0)) {
-        error(0, "Args");
+        return EXIT_SUCCESS;
     }
 
     pthread_t readers[n_reader];

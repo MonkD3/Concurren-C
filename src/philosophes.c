@@ -1,20 +1,14 @@
-#include <pthread.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
+#include "./headers/cmnfunc.h" // error()
+#include "./headers/philosophes.h" // philosophe(), CYCLES
 
-#define CYCLES 10000
 
-static pthread_mutex_t* baguette;
-static int n_philo;
-
-void error(int err, char *msg) {
-    fprintf(stderr,"%s a retournÃ© %d message d'erreur : %s\n",msg,err,strerror(errno));
-    exit(EXIT_FAILURE);
+void eat(){
+    // Le philosophe mange
 }
 
-
+void think(){
+    // Le philosophe pense
+}
 
 void* philosophe ( void* arg ){
 
@@ -23,7 +17,9 @@ void* philosophe ( void* arg ){
     int right = (left + 1) % n_philo;
 
     for (int i = 0; i < CYCLES; i++) {
-        // philosophe pense
+
+        think();
+
         if(left<right) {
         pthread_mutex_lock(&baguette[left]);
         pthread_mutex_lock(&baguette[right]);
@@ -33,7 +29,7 @@ void* philosophe ( void* arg ){
         pthread_mutex_lock(&baguette[left]);
         }
 
-        // Le philosophe mange ici
+        eat();
 
         pthread_mutex_unlock(&baguette[left]);
         pthread_mutex_unlock(&baguette[right]);
@@ -42,13 +38,11 @@ void* philosophe ( void* arg ){
 }
 
 
-
-
 int main ( int argc, char *argv[]){
 
     n_philo = atoi(argv[1]);
-    if (n_philo == 0){
-        error(0, "n_philo");
+    if (n_philo <= 1){
+        return EXIT_SUCCESS;
     }
 
     int i; // To iterate
@@ -59,7 +53,6 @@ int main ( int argc, char *argv[]){
     for (i = 0; i < n_philo; i++)
         id[i]=i;
 
-    
     // Initialisation des baguettes
     if((baguette = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * n_philo)) < 0) error(-1, "malloc");
     for (i = 0; i < n_philo; i++) {
@@ -87,5 +80,5 @@ int main ( int argc, char *argv[]){
     free(baguette);
     baguette = NULL;
 
-    return (EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }

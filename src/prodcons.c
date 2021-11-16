@@ -1,48 +1,36 @@
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-
-#define BUFSIZE 8
-#define NPROD 1024
-
-int buffer[BUFSIZE];
-int idxput;
-int idxtake;
-
-pthread_mutex_t mutex;
-sem_t empty;
-sem_t full;
+#include "./headers/prodcons.h" // producer(), consumer()
+#include "./headers/cmnfunc.h" // error(), simulate_processing()
 
 
-
-
-void error(int err, char *msg) {
-    fprintf(stderr,"%s a retourné %d message d'erreur : %s\n",msg,err,strerror(errno));
-    exit(EXIT_FAILURE);
+int produce(){
+    // - rand() retourne un élément dans la plage [0;2^31 - 1]
+    // - INT_MIN vaut -2^31
+    // - (rand() >= INT_MAX/2) vaut 0 avec une probabilité de 0.5 et 1 avec une probabilité de 0.5
+    // Informellement nous avons :  
+    //       -2^31 + [0;2*(2^31 - 1)] + 1 = [-2^31 + 1; 2^31 -1]
+    // ou    -2^31 + [0;2*(2^31 - 1)] = [-2^31 ; 2^31 - 2]
+    // Ce qui nous donne bien : [-2^31; 2^31 - 1]
+    return INT_MIN + rand() + rand() + (rand() >= INT_MAX/2);   
 }
-
-void simulate_processing() {
-    // Simule la consommation de ressources CPU
-    while(rand() > RAND_MAX/10000);
-}
-
 
 void* producer(void* args){
     int item;
-    while(idxput < NPROD){
+    while(1){
         // Simule un traitement (le calcul de l'élément à mettre dans le buffer)
         simulate_processing();
+        item = produce();
 
         sem_wait(&empty); // attente d'une place libre
-        pthread_mutex_lock(&mutex);
-        // section critique
-        item = rand();
-        buffer[(idxput++)%BUFSIZE] = item;
-
-        pthread_mutex_unlock(&mutex);
+            pthread_mutex_lock(&mutex);
+                // section critique
+                if (idxput >= NPROD){
+                    pthread_mutex_unlock(&mutex);
+                    sem_post(&full);
+                    sem_post(&empty);
+                    break;
+                }
+                buffer[(idxput++)%BUFSIZE] = item;
+            pthread_mutex_unlock(&mutex);
         sem_post(&full); // il y a une place remplie en plus
     }
     return NULL;
@@ -51,12 +39,18 @@ void* producer(void* args){
 
 void* consumer(void* args){
     int item;
-    while(idxtake < NPROD){
+    while(1){
         sem_wait(&full); // attente d'une place remplie
-        pthread_mutex_lock(&mutex);
-            // section critique
-            item = buffer[(idxtake++)%BUFSIZE];
-        pthread_mutex_unlock(&mutex);
+            pthread_mutex_lock(&mutex);
+                if (idxtake >= NPROD){
+                    pthread_mutex_unlock(&mutex);
+                    sem_post(&empty);
+                    sem_post(&full);
+                    break;
+                }
+                // section critique
+                item = buffer[(idxtake++)%BUFSIZE];
+            pthread_mutex_unlock(&mutex);
         sem_post(&empty); // il y a une place libre en plus
 
         if (item); // This line avoids "unused-but-set-variable" from -Werror flag
@@ -74,7 +68,7 @@ int main(int argc, char* argv[]){
     int n_prod = atoi(argv[2]);
 
     if ((n_conso <= 0) || (n_prod <= 0)) {
-        error(0, "Args");
+        return EXIT_SUCCESS;
     }
 
     pthread_t cons[n_prod];
@@ -115,6 +109,7 @@ int main(int argc, char* argv[]){
     err |= sem_destroy(&empty);
     err |= sem_destroy(&full); 
     if (err != 0) error(err, "Sem_destroy ou pthread_mutex_destroy");
+
 
     return EXIT_SUCCESS;
 }

@@ -5,9 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import argparse
 import csv
-import platform
-
-platform.processor()
 
 
 # Change the base settings of the plots
@@ -64,7 +61,6 @@ ax[2].scatter(range(len(header)), np.std(mesures, axis=0))
 
 # Give a title to the figure
 plt.suptitle(args.title)
-# Save the figure in png and pdf
-plt.savefig(args.graphpath)
-plt.savefig(args.graphpath)
+# Save the figure in pdf
+plt.savefig(args.graphpath + ".pdf")
 print("Your graph has been saved to {}.".format(args.graphpath))
