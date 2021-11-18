@@ -9,8 +9,8 @@
 
 
 int buffer[BUFSIZE]; // Buffer CIRCULAIRE
-int idxput; // Index auquel placer un élément produit
-int idxtake; // Index auquel prendre un élément à consommer
+int idxput = 0; // Index auquel placer un élément produit
+int idxtake = 0; // Index auquel prendre un élément à consommer
 
 pthread_mutex_t mutex;
 sem_t empty;

@@ -63,7 +63,7 @@ void* consumer(void* args){
 
 
 int main(int argc, char* argv[]){
-
+    srand(time(NULL));
     int n_conso = atoi(argv[1]);
     int n_prod = atoi(argv[2]);
 

@@ -4,7 +4,6 @@
 
 void * writer(void* args){
     while (1) {
-
         // Le writer est censé "prévoir" les données à écrire ici.
 
         pthread_mutex_lock(&mutex_writecount);
@@ -17,8 +16,8 @@ void * writer(void* args){
 
             writecount++;
             if(writecount==1) {
-            // premier writer arrive
-            sem_wait(&rsem);
+                // premier writer arrive
+                sem_wait(&rsem);
             }
         pthread_mutex_unlock(&mutex_writecount);
 
@@ -31,8 +30,8 @@ void * writer(void* args){
             // section critique - writecount
             writecount--;
             if(writecount==0) {
-            // départ du dernier writer
-            sem_post(&rsem);
+                // départ du dernier writer
+                sem_post(&rsem);
             }
         pthread_mutex_unlock(&mutex_writecount);
     }
