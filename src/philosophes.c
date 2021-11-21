@@ -1,4 +1,5 @@
 #include "./headers/cmnfunc.h" // error()
+#include "./headers/primitives.h"
 #include "./headers/philosophes.h" // philosophe(), CYCLES
 
 
@@ -15,25 +16,27 @@ void* philosophe ( void* arg ){
     int *id=(int *) arg;
     int left = *id;
     int right = (left + 1) % n_philo;
+    int i;
 
-    for (int i = 0; i < CYCLES; i++) {
+    for (i = 0; i < CYCLES; i++) {
 
         think();
 
         if(left<right) {
-        pthread_mutex_lock(&baguette[left]);
-        pthread_mutex_lock(&baguette[right]);
+            lock(&baguettes[left]);
+            lock(&baguettes[right]);
         }
         else {
-        pthread_mutex_lock(&baguette[right]);
-        pthread_mutex_lock(&baguette[left]);
+            lock(&baguettes[right]);
+            lock(&baguettes[left]);
         }
 
         eat();
 
-        pthread_mutex_unlock(&baguette[left]);
-        pthread_mutex_unlock(&baguette[right]);
+        unlock(&baguettes[left]);
+        unlock(&baguettes[right]);
     }
+
     return (NULL);
 }
 
@@ -45,6 +48,12 @@ int main ( int argc, char *argv[]){
         return EXIT_SUCCESS;
     }
 
+    if (!strcasecmp(argv[2], "POSIX")) algo = 0;
+    else if (!strcasecmp(argv[2], "TAS")) algo = 1; 
+    else if (!strcasecmp(argv[2], "TATAS")) algo = 2;
+    else algo = 0; // Utilise les threads posix par défaut
+
+
     int i; // To iterate
     int id[n_philo]; 
     int err;
@@ -52,13 +61,13 @@ int main ( int argc, char *argv[]){
 
     for (i = 0; i < n_philo; i++)
         id[i]=i;
-
-    // Initialisation des baguettes
-    if((baguette = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * n_philo)) < 0) error(-1, "malloc");
-    for (i = 0; i < n_philo; i++) {
-        err=pthread_mutex_init( &baguette[i], NULL);
-        if(err!=0) error(err,"pthread_mutex_init");
+    
+    baguettes = (mutex_t*) malloc(sizeof(mutex_t) * n_philo);
+    for (i = 0; i < n_philo; i++){
+        err = init_mutex(&baguettes[i], algo);
+        if (&baguettes[i] == NULL) error(0, "init_mutex");
     }
+
 
     // Initialisation des philosophes
     for (i = 0; i < n_philo; i++) {
@@ -72,13 +81,11 @@ int main ( int argc, char *argv[]){
         if(err!=0) error(err,"pthread_join");
     }
 
-    // Libération des ressources des baguettes
-    for (i = 0; i < n_philo; i++) {
-        err = pthread_mutex_destroy(&baguette[i]);
-        if(err!=0) error(err,"pthread_mutex_destroy");
+    for (i = 0; i < n_philo; i++){
+        err = destroy_mutex(&baguettes[i]);
+        if (err != 0) error(err, "destroy_mutex");
     }
-    free(baguette);
-    baguette = NULL;
+    free(baguettes);
 
     return EXIT_SUCCESS;
 }

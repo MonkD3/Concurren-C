@@ -1,4 +1,5 @@
 #include "./headers/cmnfunc.h" // error(), simulate_processing()
+#include "./headers/primitives.h"
 #include "./headers/readwrt.h" // reader(), writer()
 
 
@@ -6,10 +7,10 @@ void * writer(void* args){
     while (1) {
         // Le writer est censé "prévoir" les données à écrire ici.
 
-        pthread_mutex_lock(&mutex_writecount);
+        lock(&mutex_writecount);
             // section critique - writecount
             if (write_total >= WR_CYCLES){
-                pthread_mutex_unlock(&mutex_writecount);
+                unlock(&mutex_writecount);
                 break;
             }
             write_total++;
@@ -17,23 +18,23 @@ void * writer(void* args){
             writecount++;
             if(writecount==1) {
                 // premier writer arrive
-                sem_wait(&rsem);
+                wait(&rsem);
             }
-        pthread_mutex_unlock(&mutex_writecount);
+        unlock(&mutex_writecount);
 
-        sem_wait(&wsem);
+        wait(&wsem);
             // section critique, un seul writer à la fois
             simulate_processing(); 
-        sem_post(&wsem);
+        post(&wsem);
 
-        pthread_mutex_lock(&mutex_writecount);
+        lock(&mutex_writecount);
             // section critique - writecount
             writecount--;
             if(writecount==0) {
                 // départ du dernier writer
-                sem_post(&rsem);
+                post(&rsem);
             }
-        pthread_mutex_unlock(&mutex_writecount);
+        unlock(&mutex_writecount);
     }
 
     return NULL;
@@ -42,16 +43,16 @@ void * writer(void* args){
 
 void * reader(void* args){
     while(1) {
-        pthread_mutex_lock(&z);
+        lock(&z);
             // exclusion mutuelle, un seul reader en attente sur rsem
-            sem_wait(&rsem);
-                pthread_mutex_lock(&mutex_readcount);
+            wait(&rsem);
+                lock(&mutex_readcount);
                     // exclusion mutuelle, readercount
 
                     if (read_total >= RD_CYCLES){
-                        pthread_mutex_unlock(&mutex_readcount);
-                        sem_post(&rsem);
-                        pthread_mutex_unlock(&z);
+                        unlock(&mutex_readcount);
+                        post(&rsem);
+                        unlock(&z);
                         break;
                     }
                     read_total++;
@@ -59,22 +60,22 @@ void * reader(void* args){
                     readcount++;
                     if (readcount==1) {
                         // arrivée du premier reader
-                        sem_wait(&wsem);
+                        wait(&wsem);
                     }
-                pthread_mutex_unlock(&mutex_readcount);
-            sem_post(&rsem);  // libération du prochain reader
-        pthread_mutex_unlock(&z);
+                unlock(&mutex_readcount);
+            post(&rsem);  // libération du prochain reader
+        unlock(&z);
 
         simulate_processing();
 
-        pthread_mutex_lock(&mutex_readcount);
+        lock(&mutex_readcount);
             // exclusion mutuelle, readcount
             readcount--;
             if(readcount==0) {
                 // départ du dernier reader
-                sem_post(&wsem);
+                post(&wsem);
             }
-        pthread_mutex_unlock(&mutex_readcount);
+        unlock(&mutex_readcount);
 
         // Le reader est censé process l'information lue ici.
     }
@@ -93,16 +94,22 @@ int main(int argc, char* argv[]){
         return EXIT_SUCCESS;
     }
 
+    char* arg = argv[3];
+    if (!strcasecmp(arg, "POSIX")) algo = 0;
+    else if (!strcasecmp(arg, "TAS")) algo = 1; 
+    else if (!strcasecmp(arg, "TATAS")) algo = 2;
+    else algo = 0; // Utilise les threads posix par défaut
+
     pthread_t readers[n_reader];
     pthread_t writers[n_writer];
     int err;
 
     // Instancie les sémaphores
-    sem_init(&wsem, 0, 1);
-    sem_init(&rsem, 0, 1);
-    pthread_mutex_init(&mutex_readcount, NULL);
-    pthread_mutex_init(&mutex_writecount, NULL);
-    pthread_mutex_init(&z, NULL);
+    if ((err = init_semaphore(&wsem, algo, 1)) < 0) error(err, "init_semaphore");
+    if ((err = init_semaphore(&rsem, algo, 1)) < 0) error(err, "init_semaphore");
+    if ((err = init_mutex(&mutex_readcount, algo)) < 0) error(err, "init_mutex");
+    if ((err = init_mutex(&mutex_writecount, algo)) < 0) error(err, "init_mutex");
+    if ((err = init_mutex(&z, algo)) < 0) error(err, "init_mutex");
 
     // Initialisation des readers :
     for (int i = 0; i < n_reader; i++){
@@ -129,11 +136,11 @@ int main(int argc, char* argv[]){
     }
 
     // Détruit les ressources utilisées :
-    err = sem_destroy(&wsem);
-    err |= sem_destroy(&rsem);
-    err |= pthread_mutex_destroy(&mutex_writecount);
-    err |= pthread_mutex_destroy(&mutex_readcount);
-    err |= pthread_mutex_destroy(&z);
+    err = destroy_semaphore(&wsem);
+    err |= destroy_semaphore(&rsem);
+    err |= destroy_mutex(&mutex_writecount);
+    err |= destroy_mutex(&mutex_readcount);
+    err |= destroy_mutex(&z);
     if (err != 0) error(err, "Sem_destroy ou pthread_mutex_destroy");
 
     return EXIT_SUCCESS;

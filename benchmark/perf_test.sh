@@ -5,6 +5,7 @@
 TOEXEC=$1 # The command to execute
 OUTFILE=$2 # The file in which we store the data
 NARGS=$3 # Number of argument of the command
+ALGO=$4 # Which lock algorithm to use
 NOBS=5 # The number of observation to take
 NPROC=$(grep -c ^processor /proc/cpuinfo) # Count the number of processor in the machine
 
@@ -13,10 +14,11 @@ get_args() {
     local func_result=""
     if [ ${NARGS} -eq "1" ] 
     then 
-        func_result="${TOEXEC} $1" 
+        func_result="${TOEXEC} $1"
     else 
         func_result="${TOEXEC} $((($1 + 1)/2)) $(($1/2))"
     fi
+    func_result+=" ${ALGO}"
     echo $func_result
 }
 
@@ -27,7 +29,7 @@ do
     OUT+=",${T}t"
 done
 # Output the headers to the output file
-echo "${OUT[@]:1}" >> ${OUTFILE}
+echo "${OUT[@]:1}" > ${OUTFILE}
 
 # Make the measurement
 for ((i=1; i<=${NOBS}; i++))

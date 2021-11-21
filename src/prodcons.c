@@ -1,5 +1,6 @@
-#include "./headers/prodcons.h" // producer(), consumer()
+#include "./headers/primitives.h"
 #include "./headers/cmnfunc.h" // error(), simulate_processing()
+#include "./headers/prodcons.h" // producer(), consumer()
 
 
 int produce(){
@@ -20,18 +21,18 @@ void* producer(void* args){
         simulate_processing();
         item = produce();
 
-        sem_wait(&empty); // attente d'une place libre
-            pthread_mutex_lock(&mutex);
+        wait(&empty); // attente d'une place libre
+            lock(&mutex);
                 // section critique
                 if (idxput >= NPROD){
-                    pthread_mutex_unlock(&mutex);
-                    sem_post(&full);
-                    sem_post(&empty);
+                    unlock(&mutex);
+                    post(&full);
+                    post(&empty);
                     break;
                 }
                 buffer[(idxput++)%BUFSIZE] = item;
-            pthread_mutex_unlock(&mutex);
-        sem_post(&full); // il y a une place remplie en plus
+            unlock(&mutex);
+        post(&full); // il y a une place remplie en plus
     }
     return NULL;
 }
@@ -40,18 +41,18 @@ void* producer(void* args){
 void* consumer(void* args){
     int item;
     while(1){
-        sem_wait(&full); // attente d'une place remplie
-            pthread_mutex_lock(&mutex);
+        wait(&full); // attente d'une place remplie
+            lock(&mutex);
                 if (idxtake >= NPROD){
-                    pthread_mutex_unlock(&mutex);
-                    sem_post(&empty);
-                    sem_post(&full);
+                    unlock(&mutex);
+                    post(&empty);
+                    post(&full);
                     break;
                 }
                 // section critique
                 item = buffer[(idxtake++)%BUFSIZE];
-            pthread_mutex_unlock(&mutex);
-        sem_post(&empty); // il y a une place libre en plus
+            unlock(&mutex);
+        post(&empty); // il y a une place libre en plus
 
         if (item); // This line avoids "unused-but-set-variable" from -Werror flag
 
@@ -71,14 +72,20 @@ int main(int argc, char* argv[]){
         return EXIT_SUCCESS;
     }
 
-    pthread_t cons[n_prod];
-    pthread_t prod[n_conso];
+    char* arg = argv[3];
+    if (!strcasecmp(arg, "POSIX")) algo = 0;
+    else if (!strcasecmp(arg, "TAS")) algo = 1; 
+    else if (!strcasecmp(arg, "TATAS")) algo = 2;
+    else algo = 0; // Utilise les threads posix par défaut
+
+    pthread_t cons[n_conso];
+    pthread_t prod[n_prod];
     int err;
 
     // Instancie les primitives de synchronisation
-    pthread_mutex_init(&mutex, NULL);
-    sem_init(&empty, 0 , BUFSIZE);
-    sem_init(&full, 0 , 0); 
+    if (init_mutex(&mutex, algo) < 0) error(0, "init_mutex");
+    if (init_semaphore(&empty, algo, BUFSIZE) < 0) error(0, "init_semaphore");
+    if (init_semaphore(&full, algo, 0) < 0) error(0, "init_semaphore");
 
     // Initialisation des consumers :
     for (int i = 0; i < n_conso; i++){
@@ -105,9 +112,10 @@ int main(int argc, char* argv[]){
     }
 
     // Détruit les ressources utilisées :
-    err = pthread_mutex_destroy(&mutex);
-    err |= sem_destroy(&empty);
-    err |= sem_destroy(&full); 
+    
+    err = destroy_mutex(&mutex);
+    err |= destroy_semaphore(&empty);
+    err |= destroy_semaphore(&full); 
     if (err != 0) error(err, "Sem_destroy ou pthread_mutex_destroy");
 
 
