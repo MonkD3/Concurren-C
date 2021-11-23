@@ -2,9 +2,11 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
-#include <stdlib.h>
+#include <pthread.h>   // pthread_t, pthread_create, pthread_join
+#include <semaphore.h> // sem_t, sem_wait, sem_post
+#include <limits.h>    // INT_MAX, INT_MIN
 
-int algo; // 0 pour posix, 1 pour TAS et 2 pour TATAS
+int algo; // 0 pour POSIX, 1 pour TAS et 2 pour TATAS
 
 //============================ Implémentation du Spinlock ==============================
 
@@ -36,5 +38,40 @@ void destroy_spinsem(spinsem_t*); // Libère la mémoire allouée pour une séma
 
 int wait_spinsem(spinsem_t*); // Attend sur la sémaphore 
 int post_spinsem(spinsem_t*); // Poste la sémaphore
+
+
+// =========================== Interface de mutex ================================
+// Permet d'avoir seulement 2 fonctions génériques lock() et unlock() gérant
+// les mutex POSIX ainsi que les mutex implémenté dans primitives.h
+typedef struct {
+    int type;
+    union {
+        pthread_mutex_t* posix;
+        spinlock_t* spinlock;
+    };
+} mutex_t;
+
+int init_mutex(mutex_t*, int algo);
+int destroy_mutex(mutex_t*);
+
+int lock(mutex_t*);
+int unlock(mutex_t*);
+
+// ============================ Interface de sémaphores ===========================
+// Permet d'avoir seulement 2 fonctions génériques wait() et post() gérant les 
+// sémaphores POSIX ainsi que les sémaphores implémentées dans primmitives.h
+typedef struct {
+    int type;
+    union{
+        sem_t* posix;
+        spinsem_t* spinsem;
+    };
+} semaphore_t;
+
+int init_semaphore(semaphore_t*, int algo, int val);
+int destroy_semaphore(semaphore_t*);
+
+int wait(semaphore_t*);
+int post(semaphore_t*);
 
 #endif // PRIMITIVES_H

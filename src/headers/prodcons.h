@@ -1,9 +1,7 @@
 #ifndef PRODCONS_H
 #define PRODCONS_H
 
-#include <semaphore.h>
 #include "cmnfunc.h"
-#include <limits.h>
 
 #define BUFSIZE 8 // Taille du buffer 
 #define NPROD 1024 // Nombre d'éléments produits (et consommés)
