@@ -7,7 +7,7 @@ LIBS=-lpthread
 PY=python3
 BENCHMARK=./benchmark/perf_test.sh 
 GRAPH=./benchmark/graphes.py
-GRAPHOUT=./benchmark/Graphs
+GRAPHOUT=./report/img
 DATAOUT=./benchmark/Data
 
 # Useful directories
@@ -49,7 +49,6 @@ bench_philo: philosophes
 	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tatas.csv \
 				   --legend "mutex POSIX" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
-				   --title "Benchmark philosophes.c"
 
 bench_rdwrt: readwrt
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_posix.csv 2 "POSIX"
@@ -57,7 +56,6 @@ bench_rdwrt: readwrt
 	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tatas.csv \
 				   --legend "mutex POSIX" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
-				   --title "Benchmark readwrt.c"
 
 bench_pc: prodcons
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_posix.csv 2 "POSIX"
@@ -65,7 +63,6 @@ bench_pc: prodcons
 	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tatas.csv \
 				   --legend "mutex POSIX" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
-				   --title "Benchmark prodcons.c"
 
 bench_spin: spinlock 
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tas.csv 1 "TAS"
@@ -73,13 +70,15 @@ bench_spin: spinlock
 	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_tas.csv $(DATAOUT)/$^_tatas.csv \
 				   --legend "mutex POSIX" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
-				   --title "Benchmark spinlock.c"
+
 ################################# Cleaning targets ###############################
 
 clean:
 	rm -f ./$(BUILDDIR)/*
 	rm -f ./$(SRCDIR)/*.o
-	rm -f benchmark/Data/*
-	rm -f benchmark/Graphs/*
+
+fullclean: clean 
+	rm -f ./$(DATAOUT)/*
+	rm -f ./$(GRAPHOUT)/*
 
 .PHONY: clean
