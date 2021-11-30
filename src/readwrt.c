@@ -95,9 +95,9 @@ int main(int argc, char* argv[]){
     }
 
     char* arg = argv[3];
-    if (!strcasecmp(arg, "POSIX")) algo = 0;
-    else if (!strcasecmp(arg, "TAS")) algo = 1; 
-    else if (!strcasecmp(arg, "TATAS")) algo = 2;
+    if (!strcmp(arg, "POSIX")) algo = 0;
+    else if (!strcmp(arg, "TAS")) algo = 1; 
+    else if (!strcmp(arg, "TATAS")) algo = 2;
     else algo = 0; // Utilise les threads posix par défaut
 
     pthread_t readers[n_reader];

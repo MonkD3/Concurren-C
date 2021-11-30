@@ -28,8 +28,8 @@ int main(int argc, char* argv[]){
 
     // Choisis l'algorithme de lock à utiliser
     int algo;
-    if (!strcasecmp(argv[2], "TAS")) algo = 0;
-    else if (!strcasecmp(argv[2], "TATAS")) algo = 1;
+    if (!strcmp(argv[2], "TAS")) algo = 0;
+    else if (!strcmp(argv[2], "TATAS")) algo = 1;
     else error(0, "Wrong arguments");
 
     int err;

@@ -48,9 +48,9 @@ int main ( int argc, char *argv[]){
         return EXIT_SUCCESS;
     }
 
-    if (!strcasecmp(argv[2], "POSIX")) algo = 0;
-    else if (!strcasecmp(argv[2], "TAS")) algo = 1; 
-    else if (!strcasecmp(argv[2], "TATAS")) algo = 2;
+    if (!strcmp(argv[2], "POSIX")) algo = 0;
+    else if (!strcmp(argv[2], "TAS")) algo = 1; 
+    else if (!strcmp(argv[2], "TATAS")) algo = 2;
     else algo = 0; // Utilise les threads posix par défaut
 
 

@@ -1,5 +1,19 @@
 # concurren-C
 
+Questions à poser :
+
+- Pourquoi mes résultats de prodcons et readwrt sont bizarres ? ==> Car plus de thread signifie plus de travail, c'est un algorithme de *synchronisation*, c'est à dire qu'au plus il y a de threads, au plus il aura du mal.
+
+- Est ce que je peux effectuer l'interface générique permettant de ne pas avoir des dédoublements de code ? ==> Oui mais il faut BIEN le documenter.
+
+- Est-ce qu'afficher l'écart type comme une erreur sur les plots est suffisant ou est ce qu'il faut absolument un graphe avec l'écart type ?
+
+- Est-ce que l'algorithme TATAS doit être effectué en assembleur ? En une seule fonction ? ==> OSEF il faut juste que y'a l'instruction xchg
+
+- La manière dont je définis mes sémaphores diffère du cours mais est fonctionnele (et en fait en faisant pareil que le cours ça produisait des deadlocks)
+
+##
+
 Ce projet contient de nombreux fichiers permettant d'analyser les performances de plusieurs algorithmes classiques de synchronisations :
 * Le problème des philosophes
 * Le problème des producteurs-consommateurs

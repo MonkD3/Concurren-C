@@ -1,6 +1,6 @@
 # Compilation vars
 CC=gcc
-CFLAGS=-Wall -Werror -g # -march=native -std=gnu11 -fopt-info-vec
+CFLAGS=-Wall -Werror -std=gnu99
 LIBS=-lpthread
 
 # Benchmarking vars

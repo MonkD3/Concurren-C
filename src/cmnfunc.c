@@ -5,7 +5,7 @@ void error(int err, char *msg) {
     exit(EXIT_FAILURE);
 }
 
-void simulate_processing() {
+void __inline simulate_processing() {
     // Simule la consommation de ressources CPU
     while(rand() > RAND_MAX/10000);
 }

@@ -37,42 +37,24 @@ for idx, data_file in enumerate(args.datapath) :
 
 mesures = np.array(mesures)
 
-# create the subplots, the first for the boxplot, second and third for mean,std
-ax0 = plt.subplot(211)
-ax1 = plt.subplot(212, sharex=ax0)
-ax = [ax0, ax1]
+ax = plt.subplot()
 
 # Compute useful data
 mean = np.mean(mesures, axis=1)
 std = np.std(mesures, axis=1)
-lower_confidence = mean - 2*std 
-upper_confidence = mean + 2*std 
 
-# Common set up to all :
-for axe in ax :
-    # axe.set_xticks(range(len(header)))
-    # axe.set_xticklabels(header)
-    axe.set_ylabel("Temps [s]")
-    axe.set_xlabel("Nombre de Threads")
+ax.set_ylabel("Temps [s]")
+ax.set_xlabel("Nombre de Threads")
 
-ax[0].set_xticks(range(len(header)))
-ax[0].set_xticklabels(header)
+ax.set_xticks(range(len(header)))
+ax.set_xticklabels(header)
+ax.set_ylim(bottom=0, top = 1.1*(mean.max() + std.max()))
 
 # Plot the graph of means
-ax[0].set_title("Temps moyen pour n threads")
-for legend, mes in zip(args.legend, mean):
-    ax[0].errorbar(range(len(header)), mes, yerr=std, fmt='.-', label=legend)
-
-ax[0].legend()
-
-# PLot the graph of std
-ax[1].set_title("Ecart-type pour n threads")
-for legend, mes in zip(args.legend, std):
-    ax[1].scatter(range(len(header)), mes, label=legend)
-ax[1].legend()
-
-# Make the space between the 2 graphs a little larger :
-plt.subplots_adjust(hspace=0.3)
+ax.set_title("Temps moyen pour n threads")
+for legend, mes, stdd in zip(args.legend, mean, std):
+    ax.errorbar(range(len(header)), mes, yerr=stdd, fmt='.-', capsize=3, label=legend)
+ax.legend()
 
 # Save the figure in pdf
 plt.savefig(args.graphpath + ".pdf")
