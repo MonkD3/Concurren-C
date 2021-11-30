@@ -1,40 +1,65 @@
 # concurren-C
 
-Questions à poser :
-
-- Pourquoi mes résultats de prodcons et readwrt sont bizarres ? ==> Car plus de thread signifie plus de travail, c'est un algorithme de *synchronisation*, c'est à dire qu'au plus il y a de threads, au plus il aura du mal.
-
-- Est ce que je peux effectuer l'interface générique permettant de ne pas avoir des dédoublements de code ? ==> Oui mais il faut BIEN le documenter.
-
-- Est-ce qu'afficher l'écart type comme une erreur sur les plots est suffisant ou est ce qu'il faut absolument un graphe avec l'écart type ?
-
-- Est-ce que l'algorithme TATAS doit être effectué en assembleur ? En une seule fonction ? ==> OSEF il faut juste que y'a l'instruction xchg
-
-- La manière dont je définis mes sémaphores diffère du cours mais est fonctionnele (et en fait en faisant pareil que le cours ça produisait des deadlocks)
-
-##
-
+## Introduction 
 Ce projet contient de nombreux fichiers permettant d'analyser les performances de plusieurs algorithmes classiques de synchronisations :
 * Le problème des philosophes
 * Le problème des producteurs-consommateurs
 * Le problème des lecteurs-écrivains
 
-Nous allons tester ces trois algorithmes en fonction de deux paramètres : le nombre de thread et les primitives de synchronisation utilisées.
-Le nombre de thread est un entier compris entre 1 et 2n où n est le nombre de coeurs du processeurs utilisé. Les primitives de synchronisations sont les mutex et sémaphores POSIX ou les verrous à attente active et sémaphores construit sur base de ces verrous.
+Nous allons tester ces trois algorithmes en fonction de deux paramètres 
+- Le nombre de thread 
+- Les primitives de synchronisation utilisées
 
-Pour simplifier l'utilisation des trois algorithmes avec différentes primitives. J'ai implémenté une interface permettant de choisir quelles primitives utiliser. Ainsi donner l'argument "POSIX" au programme le fera utiliser les primitives POSIX alors que donner l'argument "TAS" ou "TATAS" permet d'utiliser les verrous à attente active *test-and-set* ou *test-and-test-and-set* 
+Le nombre de thread est un entier compris entre 1 et 2n où n est le nombre de coeurs du processeur utilisé. Les primitives de synchronisations seront soit les mutex et sémaphores POSIX définies dans ``<pthread.h>`` et ``<semaphore.h>`` soit les verrous à attente active et sémaphores construit sur base de ces verrous définies dans ``"primitives.h"``.
 
-L'interface des mutex est mise en place à l'aide de la structure *mutex_t* et des fonctions ``init_mutex()``, ``destroy_mutex()``, ``lock()``, ``unlock()``.
+## **Important** : Interface des primitives 
 
-La structure *mutex_t* comprend un *int* exprimant le type de mutex utilisé (POSIX, TAS ou TATAS) ainsi qu'une *union* contenant soit un *pthread_mutex_t* soit un *spinlock_t* (défini dans ``primitives.h``). De cette manière, on peut définir une fonction générique ``lock()`` et ``unlock()`` prenant un *mutex_t* en entrée et effectuant l'opération souhaitée peu importe le type de mutex utilisé.
+Pour simplifier l'utilisation des trois algorithmes avec les différentes primitives de synchronisations, j'ai implémenté une interface générique permettant de choisir à l'aide d'un argument en ligne de commande quelle primitive utiliser lors de l'exécution de chaque programme. Ainsi donner l'argument "POSIX" au programme le fera utiliser les primitives POSIX alors que donner l'argument "TAS" ou "TATAS" permet d'utiliser les verrous à attente active *test-and-set* ou *test-and-test-and-set* 
 
-De la même manière, la structure *semaphore_t* comprend un *int* et une *union* permettant de définir les fonctions génériques ``wait()`` et ``post()``
+### Interface des mutex
+
+L'interface des mutex est mise en place à l'aide de la structure *mutex_t* définie comme suit :
+
+```c
+typedef struct {
+  int type;
+  union {
+    pthread_mutex_t* posix;
+    spinlock_t* spinlock;
+  };
+} mutex_t;
+```
+L'entier ``type`` permet de déterminer quel type de mutex utiliser et l'union permet d'associer le type de mutex souhaité. Comme stipulé ci-dessus ``type = 0`` signifie que l'on souhaite utiliser un mutex POSIX, 1 si l'on souhaite un mutex TAS et 2 pour un mutex TATAS.
+
+A cette structure est associée 4 fonctions, permettant de définir un *type abstrait de donnée*. Ces fonctions sont ``init_mutex(mutex_t*, int)``, ``destroy_mutex(mutex_t*)``, ``lock(mutex_t*)``, ``unlock(mutex_t*)``.
+
+La fonction d'initialisation prend un pointeur vers un ``mutex_t`` ainsi qu'un int et va permettre d'initialiser un mutex POSIX, TAS ou TATAS suivant la valeur de l'entier fourni. La fonction ``destroy_mutex()`` permet comme son nom l'indique de désallouer toutes les ressources utilisées par le ``mutex_t``.
+
+Les fonctions ``lock()`` et ``unlock()`` sont les parties les plus importantes de cette interface. Elles prennent en argument un pointeur vers un ``mutex_t``, regardent la valeur de ``mutex_t->type`` et effectuent les appels aux fonctions de la librairie ``<pthread.h>`` si le mutex est de type POSIX ou aux fonctions de ``"primitives.h"`` si le mutex est de type TAS ou TATAS. 
+
+### Interface des sémaphores
+
+De la même manière, la structure *semaphore_t* comprend un *int* et une *union* de cette forme :
+```c
+typedef struct {
+    int type;
+    union{
+        sem_t* posix;
+        spinsem_t* spinsem;
+    };
+} semaphore_t;
+```
+
+Celle-ci permettant de définir les fonctions génériques ``init_semaphore(semaphore_t*, int)``, ``destroy_semaphore(semaphore_t*)``n ``wait(semaphore_t*)`` et ``post(semaphore_t*)``.
+
+Les fonctions ``wait()`` et ``post()`` observent la valeur ``type`` de la ``semaphore_t*`` fournie en argument afin de déterminer si il faut exécuter les fonctions de la librairie ``<semaphore.h>`` ou bien celles définies dans ``"primitives.h"``.
+
 
 ## Structure du projet :
 
 Le projet contient de nombreux fichiers :
-* ``benchmark`` : Contient les fichiers relatifs aux tests de performances.
-* ``benchmark/Data`` : Contient toutes les performances sous format ``.csv``
+* ``benchmark`` : Contient les fichiers relatifs aux tests de performances. Il y'a donc le fichier bash d'automatisation des tests de performances, le fichier python permettant de plot les graphes ainsi que les données brutes au format ``.csv``
+* ``report`` : Contient les fichiers ``.tex`` utilisé pour l'écriture du rapport.
 * ``src`` : Contient tous les fichiers sources et headers nécéssaires à la compilation des éxécutables.
   - ``cmnfunc`` : implémente les fonctions communes à plusieurs des exécutables.
   - ``primitives`` : implémente les primitives de synchronisation ainsi qu'une interface facilitant l'utilisation des différents paramètres (cette interface est décrite ci-dessus).
@@ -42,8 +67,14 @@ Le projet contient de nombreux fichiers :
   - ``prodcons`` : implémente le problème des producteurs-consommateurs
   - ``readwrt`` : implémente le problème des lecteurs-écrivains
   - ``spinlock`` : implémente les tests des primitives de synchronisation définies dans ``primitives``
-* Un Makefile consistant en plusieurs targets :
-  - (cible par défaut) ``all`` : compile tous les exécutables.
-  - ``benchmark`` : Effectue les tests de performances ainsi que les graphes.
-  - ``clean`` : Supprime les exécutables ainsi que les résidus de compilations.
-  - ``fullclean`` : effectue la cible ``clean`` et supprime également les graphes ainsi que les données des tests de performances.
+* Le Makefile permettant d'automatiser les tâches de développements et de testing, ces cibles sont définies ci-dessous. 
+* Ce README
+
+## Cibles du Makefile
+
+- (cible par défaut) ``all`` : compile tous les exécutables.
+- ``benchmark`` : Effectue les tests de performances ainsi que les graphes.
+- ``clean`` : Supprime les exécutables ainsi que les résidus de compilations.
+- ``fullclean`` : effectue la cible ``clean`` et supprime également les graphes ainsi que les données des tests de performances.
+ 
+Le Makefile contient d'autres cibles plus spécifiques permettant de compiler ou effectuer les tests de performances d'un seul programme, il ne sont néanmoins pas listés ici.

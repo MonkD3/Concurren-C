@@ -1,11 +1,9 @@
 #ifndef SPINLOCK_H
 #define SPINLOCK_H
 
-#include "primitives.h"
-
 #define TOTAL_CYCLES 6400 // Nombre total de cycles pour les test
 
-spinlock_t* sp; // spinlock utilisé pour tester les performances
+mutex_t* sp; // spinlock utilisé pour tester les performances
 
 int n_threads; // nombre de threads (donné par la CLI)
 int n_sc; // Nombre de section critiques à exécuter par thread

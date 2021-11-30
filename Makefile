@@ -65,10 +65,11 @@ bench_pc: prodcons
 				   --graphpath $(GRAPHOUT)/$^ \
 
 bench_spin: spinlock 
+	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_posix.csv 1 "POSIX"
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tas.csv 1 "TAS"
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tatas.csv 1 "TATAS"
-	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_tas.csv $(DATAOUT)/$^_tatas.csv \
-				   --legend "mutex POSIX" "mutex TATAS" \
+	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_tas.csv $(DATAOUT)/$^_tatas.csv $(DATAOUT)/$^_posix.csv \
+				   --legend "mutex TAS" "mutex TATAS" "mutex POSIX" \
 				   --graphpath $(GRAPHOUT)/$^ \
 
 ################################# Cleaning targets ###############################
