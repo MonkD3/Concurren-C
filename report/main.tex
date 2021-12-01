@@ -10,13 +10,13 @@
 
 Le but de ce projet est d'implémenter et évaluer les performances de plusieurs algorithmes de synchronisation.
 L'évaluation de performances ayant été effectuée s'articule autour de 2 paramètres, le nombre de \textit{thread} et le type de primitive de synchronisation utilisées.
-Le nombre de thread sera un paramètre entier comprit entre 1 et $2n$ où $n$ est le nombre de coeurs du processeur utilisé tandis que les primitives utilisées appartiendront quant à elle à 2 catégories. 
+Le nombre de thread sera un paramètre entier comprit entre 1 et $2n$ où $n$ est le nombre de coeurs du processeur \footnote{Le processeur utilisé dans le cadre de ces tests est un Intel 9400f, dont les informations techniques peuvent être retrouvées ici :https://www.intel.fr/content/www/fr/fr/products/sku/190883/intel-core-i59400f-processor-9m-cache-up-to-4-10-ghz/specifications.html?wapkw=9400F } tandis que les primitives utilisées appartiendront quant à elle à 2 catégories. 
 \begin{itemize}
     \item Les mutex et sémaphores POSIX provenant de \texttt{<pthread.h>} et de \texttt{<semaphore.h>}.
     \item Les verrous à attente active (spinlock) ainsi que les sémaphores construites sur ces verrous.
 \end{itemize}
 
-Les figures analysées dans ce rapport seront composées de 2 courbes représentant le temps moyen en fonction du nombre de threads, accompagnées de "barres d'erreur" représentant l'écart-type des mesures.
+\noindent Les figures analysées dans ce rapport seront composées de 2 courbes représentant le temps moyen en fonction du nombre de threads, accompagnées de "barres d'erreur" représentant l'écart-type des mesures.
 Les couleurs représentent la catégorie de primitives utilisées (paramètre catégoriel), l'axe des abscisses montre le nombre de thread (paramètre entier) et l'axe des orconnées représente le temps d'exécution en fonction de ces paramètres. \\
 
 \noindent Il est à noter qu'à partir de la section 3 les figures présentent toutes une valeur nulle pour un thread unique. Cela est dû au fait que nous analysons des algorithmes de \textit{synchronisation}.
@@ -35,8 +35,19 @@ La figure ci-dessous représente les performances des verrous à attente active 
     \label{pic:spinlock}
 \end{figure}
 
-\noindent Nous pouvons observer que les performances des 3 types de mutex sont assez semblables jusqu'au seuil de 6 threads, à partir duquel les performances divergent. On observe que les performances des mutex POSIX sont extrêmement stable peu importe la quantité de threads, ce qui en fait un parfait témoin.
-On peut ensuite observer que les performances de l'algorithme TAS se dégradent plus vite que celle de l'algorithme TATAS lorsque l'on augmente le nombre de threads. Pour être plus précis, on observe que la différence de temps d'exécution entre les mutex TAS et POSIX est 2 fois plus grande que la différence entre les mutex TATAS et POSIX. \\
+\noindent Nous pouvons observer que les performances des 3 types de mutex sont semblables et stables jusqu'au seuil de 6 threads, à partir duquel les performances divergent. On observe que les performances des mutex POSIX sont extrêmement stable peu importe la quantité de threads, ce qui en fait un parfait témoin.
+On peut ensuite observer que les performances de l'algorithme TAS se dégradent plus vite que celles de l'algorithme TATAS lorsque l'on augmente le nombre de threads. Pour être plus précis, on observe que la différence de temps d'exécution entre les mutex TAS et POSIX est 2 fois plus grande que la différence entre les mutex TATAS et POSIX. \\
+
+\noindent La stabilité des performances jusqu'à 6 threads peut être expliquée par le fait qu'il n'est pas nécessaire d'effectuer de changements de contexte pour terminer l'algorithme.
+A partir de 7 threads néanmoins, cela devient obligatoire. Imaginons une situation avec 7 threads nommés de T1 à T7, supposons que les threads 1 à 6 possèdent un processeur. 
+Supposons maintenant qu'après un certain temps, le thread 2 unlock le mutex et termine son travail. Il sera donc nécéssaire d'effectuer plusieurs actions pour continuer le bon déroulement du programme :
+\begin{itemize}
+    \item Déposséder le thread 2 de son processeur
+    \item Effectuer un changement de contexte pour permettre à T7 d'effectuer son travail
+    \item Lock le mutex car celui-ci est devenu libre
+\end{itemize}
+On va donc avoir une forte contention sur le mutex lors de la libération de celui-ci, engendrant dans ce cas-ci 5 opérations ``xchg``\footnote{les threads 1,3,4,5,6 essayent d'acquérir le mutex et le 7 effectue son changement de contexte}.
+Le problème étant qu'un changement de contexte doit restaurer les variables globales du thread, ce qui est impossible durant l'exécution d'une opération ``xchg`` car le bus de cache est temporairement arrêté. Les changements de contextes sont donc très lents.
 
 \noindent Cela peut être expliqué par le fait que l'algorithme TAS effectue des blocages répétés du bus de cache (à cause de l'instruction \texttt{xchg} s'exécutant répétitivement jusqu'à acquisition du spinlock) ce qui ralentit considérablement la vitesse à laquelle les différents coeurs synchronisent leur cache (et donc les variables partagées).
 
@@ -73,8 +84,6 @@ le temps d'exécution des SC est ici négligeable par rapport au temps d'accès 
 On remarque également que pour un travail équivalent le temps d'exécution augmente, il y a donc également une perte de performance dûe à la synchronisation.
 
 \section{Problème des lecteurs-écrivains}
-
-
 
 \begin{figure}[h!]
     \centering
