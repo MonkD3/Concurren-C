@@ -6,7 +6,12 @@
 #include <semaphore.h> // sem_t, sem_wait, sem_post
 #include <limits.h>    // INT_MAX, INT_MIN
 
-int algo; // 0 pour POSIX, 1 pour TAS et 2 pour TATAS
+// Spécifie l'algorithme utilisé pour les primitives de synchronisation
+typedef enum {
+    POSIX,
+    TAS,
+    TATAS
+} algo_t;
 
 //============================ Implémentation du Spinlock ==============================
 
@@ -40,14 +45,14 @@ int post_spinsem(spinsem_t*); // Poste la sémaphore
 // Permet d'avoir seulement 2 fonctions génériques lock() et unlock() gérant
 // les mutex POSIX ainsi que les mutex implémenté dans primitives.h
 typedef struct {
-    int type; // Type du mutex : 0 pour POSIX, 1 pour TAS, 2 pour TATAS
+    algo_t type; // Type du mutex : 0 pour POSIX, 1 pour TAS, 2 pour TATAS
     union {
         pthread_mutex_t* posix;
         spinlock_t* spinlock;
     }; // Type de mutex suivant la valeur fournie pour type
 } mutex_t;
 
-int init_mutex(mutex_t*, int algo); // Initialise un nouveau mutex de type "algo"
+int init_mutex(mutex_t*, algo_t algo); // Initialise un nouveau mutex de type "algo"
 int destroy_mutex(mutex_t*); // Libère la mémoire allouée à un mutex
 
 int lock(mutex_t*); // Lock un mutex
@@ -57,14 +62,14 @@ int unlock(mutex_t*); // Unlock un mutex
 // Permet d'avoir seulement 2 fonctions génériques wait() et post() gérant les 
 // sémaphores POSIX ainsi que les sémaphores implémentées dans primmitives.h
 typedef struct {
-    int type; // Type de la sémaphore : 0 pour POSIX, 1 pour TAS, 2 pour TATAS
+    algo_t type; // Type de la sémaphore : 0 pour POSIX, 1 pour TAS, 2 pour TATAS
     union{
         sem_t* posix;
         spinsem_t* spinsem;
     }; // Type de sémaphore suivant la valeur fournier pour type
 } semaphore_t;
 
-int init_semaphore(semaphore_t*, int algo, int val); // Initialise une sémaphore de type "algo" avec "val" places
+int init_semaphore(semaphore_t*, algo_t algo, int val); // Initialise une sémaphore de type "algo" avec "val" places
 int destroy_semaphore(semaphore_t*); // Désalloue la mémoire allouée pour cette sémaphore
 
 int wait(semaphore_t*); // Attend sur la sémaphore (décrémente son compteur)

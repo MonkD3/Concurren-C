@@ -2,6 +2,7 @@
 #include "./headers/primitives.h"
 #include "./headers/readwrt.h" // reader(), writer()
 
+algo_t algo; 
 
 void * writer(void* args){
     while (1) {
@@ -95,10 +96,10 @@ int main(int argc, char* argv[]){
     }
 
     char* arg = argv[3];
-    if (!strcmp(arg, "POSIX")) algo = 0;
-    else if (!strcmp(arg, "TAS")) algo = 1; 
-    else if (!strcmp(arg, "TATAS")) algo = 2;
-    else algo = 0; // Utilise les threads posix par défaut
+    if (!strcmp(arg, "POSIX")) algo = POSIX;
+    else if (!strcmp(arg, "TAS")) algo = TAS; 
+    else if (!strcmp(arg, "TATAS")) algo = TATAS;
+    else algo = POSIX; // Utilise les threads posix par défaut
 
     pthread_t readers[n_reader];
     pthread_t writers[n_writer];
@@ -136,12 +137,11 @@ int main(int argc, char* argv[]){
     }
 
     // Détruit les ressources utilisées :
-    err = destroy_semaphore(&wsem);
-    err |= destroy_semaphore(&rsem);
-    err |= destroy_mutex(&mutex_writecount);
-    err |= destroy_mutex(&mutex_readcount);
-    err |= destroy_mutex(&z);
-    if (err != 0) error(err, "Sem_destroy ou pthread_mutex_destroy");
+    if(destroy_semaphore(&wsem) != 0) error(0, "destroy_semaphore");
+    if(destroy_semaphore(&rsem) != 0) error(0, "destroy_semaphore");
+    if(destroy_mutex(&mutex_writecount) != 0) error(0, "destroy mutex");
+    if(destroy_mutex(&mutex_readcount) != 0) error(0, "destroy mutex");
+    if(destroy_mutex(&z) != 0) error(0, "destroy mutex");
 
     return EXIT_SUCCESS;
 }

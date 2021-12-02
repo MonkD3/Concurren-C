@@ -2,6 +2,7 @@
 #include "./headers/cmnfunc.h" // error(), simulate_processing()
 #include "./headers/prodcons.h" // producer(), consumer()
 
+algo_t algo;
 
 int __inline produce(){
     // - rand() retourne un élément dans la plage [0;2^31 - 1]
@@ -73,10 +74,10 @@ int main(int argc, char* argv[]){
     }
 
     char* arg = argv[3];
-    if (!strcmp(arg, "POSIX")) algo = 0;
-    else if (!strcmp(arg, "TAS")) algo = 1; 
-    else if (!strcmp(arg, "TATAS")) algo = 2;
-    else algo = 0; // Utilise les threads posix par défaut
+    if (!strcmp(arg, "POSIX")) algo = POSIX;
+    else if (!strcmp(arg, "TAS")) algo = TAS; 
+    else if (!strcmp(arg, "TATAS")) algo = TATAS;
+    else algo = POSIX; // Utilise les threads posix par défaut
 
     pthread_t cons[n_conso];
     pthread_t prod[n_prod];
@@ -112,11 +113,9 @@ int main(int argc, char* argv[]){
     }
 
     // Détruit les ressources utilisées :
-    
-    err = destroy_mutex(&mutex);
-    err |= destroy_semaphore(&empty);
-    err |= destroy_semaphore(&full); 
-    if (err != 0) error(err, "Sem_destroy ou pthread_mutex_destroy");
+    if(destroy_mutex(&mutex) != 0) error(0, "destroy mutex");
+    if(destroy_semaphore(&empty) != 0) error(0, "destroy semaphore");
+    if(destroy_semaphore(&full) != 0) error(0, "destroy semaphore");
 
 
     return EXIT_SUCCESS;

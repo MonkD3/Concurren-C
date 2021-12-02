@@ -6,7 +6,7 @@
 spinlock_t* init_spinlock(){
 
     spinlock_t* spin = (spinlock_t*) malloc(sizeof(spinlock_t));
-    if (spin == NULL) return NULL;
+    if (spin == NULL) return NULL; 
     spin->acquired = 0; // Non acquis
 
     return spin;
@@ -124,18 +124,18 @@ int post_spinsem(spinsem_t* spinsem){
 
 // ============================ Interface mutex ==========================
 
-int init_mutex(mutex_t* mut, int algo){
+int init_mutex(mutex_t* mut, algo_t algo){
     int err = 0;
 
     mut->type = algo;
-    if (algo == 0){
+    if (algo == POSIX){
         mut->posix = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
         err = pthread_mutex_init(mut->posix, NULL);
         if (err != 0) error(err, "pthread_mutex_init");
     }
     else {
         mut->spinlock = init_spinlock();
-        if (mut->spinlock == NULL) return -1;
+        if (mut->spinlock == NULL) error(0, "init_spinlock"); 
     }
 
     return err;
@@ -144,7 +144,7 @@ int init_mutex(mutex_t* mut, int algo){
 int destroy_mutex(mutex_t* mutex){
 
     int err = 0;
-    if (mutex->type == 0){
+    if (mutex->type == POSIX){
         err = pthread_mutex_destroy(mutex->posix);
         free(mutex->posix);
     } 
@@ -159,13 +159,13 @@ int lock(mutex_t* mutex){
     int err = 0;
 
     switch (mutex->type){
-    case 0:
+    case POSIX:
         err = pthread_mutex_lock(mutex->posix);
         break;
-    case 1:
+    case TAS:
         err = lock_tas(mutex->spinlock);
         break;
-    case 2:
+    case TATAS:
         err = lock_tatas(mutex->spinlock);
         break;
     }
@@ -178,11 +178,11 @@ int unlock(mutex_t* mutex){
     int err = 0;
 
     switch (mutex->type){
-    case 0:
+    case POSIX:
         err = pthread_mutex_unlock(mutex->posix);
         break;
-    case 1: // Unlock un spinlock TAS ou TATAS utilise la même fonction
-    case 2:
+    case TAS: // Unlock un spinlock TAS ou TATAS utilise la même fonction
+    case TATAS:
         err = unlock_spinlock(mutex->spinlock);
         break;
     }
@@ -193,11 +193,11 @@ int unlock(mutex_t* mutex){
 
 // ======================= Interface sémaphores ==================================
 
-int init_semaphore(semaphore_t* sem, int algo, int val){
+int init_semaphore(semaphore_t* sem, algo_t algo, int val){
     int err = 0;
 
     sem->type = algo;
-    if (algo == 0){
+    if (algo == POSIX){
         sem->posix = (sem_t*) malloc(sizeof(sem_t));
         if (sem->posix == NULL) error(0, "malloc");
         err = sem_init(sem->posix, 0, val);
@@ -215,7 +215,7 @@ int init_semaphore(semaphore_t* sem, int algo, int val){
 int destroy_semaphore(semaphore_t* sem){
 
     int err = 0;
-    if (sem->type == 0){
+    if (sem->type == POSIX){
         err = sem_destroy(sem->posix);
         free(sem->posix);
     } 
@@ -230,11 +230,11 @@ int wait(semaphore_t* sem){
     int err = 0;
 
     switch (sem->type){
-    case 0:
+    case POSIX:
         err = sem_wait(sem->posix);
         break;
-    case 1: // Les sémaphores sont implémentées en utilisant l'algorithme TATAS
-    case 2:
+    case TAS: // Les sémaphores sont implémentées en utilisant l'algorithme TATAS
+    case TATAS:
         err = wait_spinsem(sem->spinsem);
         break;
     }
@@ -247,11 +247,11 @@ int post(semaphore_t* sem){
     int err = 0;
 
     switch (sem->type){
-    case 0:
+    case POSIX:
         err = sem_post(sem->posix);
         break;
-    case 1: // Unlock un sémaphore TAS ou TATAS utilise la même fonction
-    case 2:
+    case TAS: // Unlock un sémaphore TAS ou TATAS utilise la même fonction
+    case TATAS:
         err = post_spinsem(sem->spinsem);
         break;
     }

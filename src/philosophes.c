@@ -2,6 +2,7 @@
 #include "./headers/primitives.h"
 #include "./headers/philosophes.h" // philosophe(), CYCLES
 
+algo_t algo;
 
 void eat(){
     // Le philosophe mange
@@ -43,26 +44,28 @@ void* philosophe ( void* arg ){
 
 int main ( int argc, char *argv[]){
 
+    // Lecture du nombre de philosophes
     n_philo = atoi(argv[1]);
-    if (n_philo <= 1){
-        return EXIT_SUCCESS;
+    if (n_philo <= 1) return EXIT_SUCCESS;
+
+    // Type de primitives de synchronisation utilisée
+    algo = POSIX; // Utilise les threads posix par défaut
+    if (argc > 2){
+        if (!strcmp(argv[2], "POSIX")) algo = POSIX;
+        else if (!strcmp(argv[2], "TAS")) algo = TAS; 
+        else if (!strcmp(argv[2], "TATAS")) algo = TATAS;
     }
 
-    if (!strcmp(argv[2], "POSIX")) algo = 0;
-    else if (!strcmp(argv[2], "TAS")) algo = 1; 
-    else if (!strcmp(argv[2], "TATAS")) algo = 2;
-    else algo = 0; // Utilise les threads posix par défaut
-
-
-    int i; // To iterate
-    int id[n_philo]; 
+    int i; 
     int err;
+    int id[n_philo]; 
     pthread_t phil[n_philo];
 
     for (i = 0; i < n_philo; i++)
         id[i]=i;
     
     baguettes = (mutex_t*) malloc(sizeof(mutex_t) * n_philo);
+    if (baguettes == NULL) error(0, "malloc");
     for (i = 0; i < n_philo; i++){
         err = init_mutex(&baguettes[i], algo);
         if (&baguettes[i] == NULL) error(0, "init_mutex");
