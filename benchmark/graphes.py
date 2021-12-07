@@ -11,6 +11,8 @@ import os
 # Change the base settings of the plots
 rcParams['axes.grid'] = True # Put a grid on the graphs
 rcParams['figure.figsize'] = [12,8] # Make the figure bigger
+rcParams['axes.titlesize'] = 17 # Make the title bigger
+rcParams['axes.labelsize'] = 15 # Make the label bigger
 
 # Parse arguments here (easier to deal with multiple plots and data files)
 parser = argparse.ArgumentParser();
@@ -21,8 +23,8 @@ args = parser.parse_args()
 
 n_files = len(args.datapath)
 mesures = [None for _ in range(n_files)]
-# Read the csv and collect the header and measures
 
+# Read the csv and collect the header and measures
 for idx, data_file in enumerate(args.datapath) :
     if (os.path.exists(data_file)):
         with open(data_file, "r") as file:
@@ -36,7 +38,6 @@ for idx, data_file in enumerate(args.datapath) :
         del args.legend[idx]
 
 mesures = np.array(mesures)
-
 ax = plt.subplot()
 
 # Compute useful data

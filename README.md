@@ -18,12 +18,16 @@ La compilation de ce projet a été faite avec ces outils :
 * GCC version 9.3.0
 * Ubuntu 20.04.2 LTS
 * GNU Make version 4.2.1
+* Python 3.8.10, numpy 1.20.1, matplotlib 3.3.4
 * Les standards de compilation sont les standards gnu99
+
+**Attention** Certaines cibles du Makefile nécéssitent d'effectuer des appels à l'interpréteur python. Ce dernier est appelé à l'aide de la commande ``python3``. Cependant certains interpréteurs python sont accédés au moyen de la commande ``python``, si tel est votre cas, il vous suffit de modifier ``PY=python3`` en ``PY=python`` à la 7ieme ligne du Makefile.
 
 L'entièreté des tests ont été effectué sur une machine ayant :
 * un processeur intel core I5 9400f ayant 6 coeurs physiques
 * 8Go de RAM DDR4 cadencées à 2666MHz
 
+La compilation a également été testée sur l'environnement virtuel UDS.
 ## **Important** : Interface des primitives 
 
 Pour simplifier l'utilisation des trois algorithmes avec les différentes primitives de synchronisations, j'ai implémenté une interface générique permettant de choisir à l'aide d'un argument en ligne de commande quelle primitive utiliser lors de l'exécution de chaque programme. Ainsi donner l'argument "POSIX" au programme le fera utiliser les primitives POSIX alors que donner l'argument "TAS" ou "TATAS" permet d'utiliser les verrous à attente active *test-and-set* ou *test-and-test-and-set* 
@@ -81,22 +85,23 @@ Les fonctions ``wait()`` et ``post()`` observent la valeur ``type`` de la ``sema
 
 Le projet contient de nombreux fichiers :
 * ``benchmark`` : Contient les fichiers relatifs aux tests de performances. Il y'a donc le fichier bash d'automatisation des tests de performances, le fichier python permettant de plot les graphes ainsi que les données brutes au format ``.csv``
-* ``report`` : Contient les fichiers ``.tex`` utilisé pour l'écriture du rapport.
-* ``src`` : Contient tous les fichiers sources et headers nécessaires à la compilation des éxécutables.
-  - ``cmnfunc`` : implémente les fonctions communes à plusieurs des exécutables.
-  - ``primitives`` : implémente les primitives de synchronisation ainsi qu'une interface facilitant l'utilisation des différents paramètres (cette interface est décrite ci-dessus).
+* ``report`` : Contient les fichiers ``.tex`` utilisé pour l'écriture du rapport
+* ``build`` : C'est à cet endroit que les exécutables sont placés lors de la compilation
+* ``src`` : Contient tous les fichiers sources et headers nécessaires à la compilation des éxécutables
+  - ``cmnfunc`` : implémente les fonctions communes à plusieurs des exécutables
+  - ``primitives`` : implémente les primitives de synchronisation ainsi qu'une interface facilitant l'utilisation des différents paramètres (cette interface est décrite ci-dessus)
   - ``philosophes`` : implémente le problème des philosophes
   - ``prodcons`` : implémente le problème des producteurs-consommateurs
   - ``readwrt`` : implémente le problème des lecteurs-écrivains
   - ``spinlock`` : implémente les tests des primitives de synchronisation définies dans ``primitives``
-* Le Makefile permettant d'automatiser les tâches de développements et de testing, ces cibles sont définies ci-dessous. 
-* Ce README
-
+* Le Makefile permettant d'automatiser les tâches de développements et de testing, ces cibles sont définies ci-dessous.
+* ``README.md`` : Ce README
+* ``rapport.pdf`` : Le rapport sur l'évaluation des performances
 ## Cibles du Makefile
 
 - (cible par défaut) ``all`` : compile tous les exécutables.
-- ``benchmark`` : Effectue les tests de performances ainsi que les graphes.
-- ``clean`` : Supprime les exécutables ainsi que les résidus de compilations.
-- ``fullclean`` : effectue la cible ``clean`` et supprime également les graphes ainsi que les données des tests de performances.
+- ``benchmark`` : Effectue les tests de performances ainsi que les graphes
+- ``clean`` : Supprime les exécutables ainsi que les résidus de compilations
+- ``fullclean`` : effectue la cible ``clean`` et supprime également les graphes ainsi que les données des tests de performances
  
 Le Makefile contient d'autres cibles plus spécifiques permettant de compiler ou effectuer les tests de performances d'un seul programme, il ne sont néanmoins pas listés ici.

@@ -9,14 +9,14 @@ ALGO=$4 # Which lock algorithm to use
 NOBS=5 # The number of observation to take
 NPROC=$(grep -c ^processor /proc/cpuinfo) # Count the number of processor in the machine
 
-
+# Make the computation of the parameters for each run easier
 get_args() {
     local func_result=""
     if [ ${NARGS} -eq "1" ] 
     then 
         func_result="${TOEXEC} $1"
     else 
-        func_result="${TOEXEC} $((($1 + 1)/2)) $(($1/2))"
+        func_result="${TOEXEC} $((($1 + 1)/2)) $(($1/2))" # Always favor the first parameter
     fi
     func_result+=" ${ALGO}"
     echo $func_result
@@ -28,7 +28,7 @@ for ((T=1; T<=$((2*${NPROC})); T++ ))
 do 
     OUT+=",${T}t"
 done
-# Output the headers to the output file
+# ERASE the content and output the headers to the output file
 echo "${OUT[@]:1}" > ${OUTFILE}
 
 # Make the measurement

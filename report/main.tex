@@ -12,7 +12,6 @@
     
     % Cours
     \textsc{\Large LINFO1252 - Systèmes Informatiques }\\[2cm]
-    
 
     % Titre
     \HRule \\[0.7cm]
@@ -35,7 +34,7 @@
         \vspace{0.5cm}
         
         \textsc{Professeur:}\\[0.1cm]
-         Etienne \textsc{Rivière} \\
+         Etienne \textsc{Riviere} \\
       \end{center}
     \end{minipage}
     \\[0.3cm]
@@ -52,19 +51,20 @@
 \section{Introduction}
 
 Le but de ce projet est d'implémenter et évaluer les performances de plusieurs algorithmes de synchronisation.
-L'évaluation de performances ayant été effectuée s'articule autour de 2 paramètres, le nombre de \textit{thread} et le type de primitive de synchronisation utilisées.
-Le nombre de thread sera un paramètre entier comprit entre 1 et $2n$ où $n$ est le nombre de coeurs du processeur \footnote{Le processeur utilisé dans le cadre de ces tests est un Intel i5 9400f, dont les informations techniques peuvent être retrouvées ici :https://www.intel.fr/content/www/fr/fr/products/sku/190883/intel-core-i59400f-processor-9m-cache-up-to-4-10-ghz/specifications.html?wapkw=9400F } tandis que les primitives utilisées appartiendront quant à elle à 2 catégories. La première comprend les mutex et sémaphores POSIX provenant de \texttt{<pthread.h>} et de \texttt{<semaphore.h>} alors que la seconde englobe les verrous à attente active (spinlock) ainsi que les sémaphores construites sur ces verrous.\\ 
+L'évaluation de performances ayant été effectuée s'articule autour de 2 paramètres, le nombre de \textit{thread} et le type de primitives de synchronisation utilisées.
+Le nombre de thread sera un paramètre entier comprit entre 1 et $2n$ où $n$ est le nombre de coeurs du processeur \footnote{Le processeur utilisé dans le cadre de ces tests est un Intel i5 9400f possédant 6 coeurs physiques, dont les informations techniques peuvent être retrouvées ici :https://www.intel.fr/content/www/fr/fr/products/sku/190883/intel-core-i59400f-processor-9m-cache-up-to-4-10-ghz/specifications.html?wapkw=9400F } tandis que les primitives utilisées appartiendront quant à elle à 2 catégories. 
+La première comprend les mutex et sémaphores POSIX provenant de \texttt{<pthread.h>} et de \texttt{<semaphore.h>} alors que la seconde englobe mon implémentation des verrous à attente active (spinlock) ainsi que les sémaphores construites sur base de ceux-ci.\\ 
 
 \noindent Les figures analysées dans ce rapport seront composées de 2 courbes représentant le temps moyen en fonction du nombre de threads, accompagnées de "barres d'erreur" représentant l'écart-type des mesures.
 Les couleurs représentent la catégorie de primitives utilisées (paramètre catégoriel), l'axe des abscisses montre le nombre de thread (paramètre entier) et l'axe des ordonnées représente le temps d'exécution en fonction de ces paramètres. \\
 
 \noindent Il est à noter qu'à partir de la section 3 les figures présentent toutes une valeur nulle pour un thread unique. Cela est dû au fait que nous analysons des algorithmes de \textit{synchronisation}.
-Il nous faut donc au minimum 2 threads pour pouvoir analyser le comportement de ces algorithmes. Une autre information importante pour la bonne compréhension du lecteur est le fait que je parle très souvent de \textit{compétitivité au niveau des mutex}. J'entend par cela que plusieurs threads tentent d'accéder à un mutex de manière concurrente et/ou répétée.
+Il nous faut donc au minimum 2 threads pour pouvoir analyser le comportement de ces algorithmes. Une autre information importante pour la bonne compréhension du lecteur est le fait que je parle très souvent de \textit{compétitivité au niveau des mutex/sémaphores}. J'entend par cela que plusieurs threads tentent d'accéder à un mutex/sémaphore de manière concurrente et/ou répétée.
 
 \section{Verrous à attente active}
 
 Commençons tout d'abord par analyser la performance des spinlocks, car nous utiliseront ceux-ci dans la suite de nos analyses. Il est ici proposé de comparer
-2 algorithmes d'implémentation de spinlocks : l'algorithme \textit{test-and-set}, et l'algorithme \textit{test-and-test-and-set} \footnote{Ces algorithmes sont nommées TAS et TATAS pour la suite de ce rapport}, j'ai prit la liberté d'également afficher les performances des mutex POSIX afin d'avoir un témoin. La figure (\ref{pic:spinlock}) représente les performances des spinlocks.\\
+2 algorithmes d'implémentation de spinlocks : l'algorithme \textit{test-and-set}, et l'algorithme \textit{test-and-test-and-set} \footnote{Ces algorithmes sont nommées TAS et TATAS pour la suite de ce rapport}, j'ai prit la liberté d'également afficher les performances des mutex POSIX afin d'avoir un témoin. La figure (\ref{pic:spinlock}) représente les performances obvservées.\\
 
 \begin{figure}[h]
     \centering
@@ -78,7 +78,7 @@ On peut ensuite observer que les performances de l'algorithme TAS se dégradent 
 
 \noindent La stabilité des performances jusqu'à 6 threads peut être expliquée par 2 phénomènes. Le premier étant qu'il n'est pas nécessaire d'effectuer de changements de contexte intra-processus pour terminer l'algorithme. Le second étant le fait que dans cet algorithme les threads ne partagent pas de variables globales à l'exception du mutex. Cela signifie que les appels répétés aux instructions \texttt{xchg} n'impactent pas la vitesse de travail du thread se trouvant dans sa section critique.\\[0.1cm]
 
-\noindent A partir de 7 threads néanmoins, les changements de contextes deviennent obligatoires. Cela peut impacter la performance de plusieurs manières. La première provient du fait que comme les spinlocks ne sont pas implémentés au niveau du noyaux, le scheduler peut décider de préempter un thread se situant dans sa section critique. Ce qui empêcherait donc le programme d'avancer dans son travail. Le second impact provient du fait que les changements de contextes devront toujours s'effectuer lors de l'exécution d'instructions \texttt{xchg}. Or un changement de contexte nécessite la restauration des variables globales du thread ainsi que des ses registres \texttt{\%esp, \%eip}, ce qui ne peut s'effectuer parallèlement aux instructions atomiques car celles-ci provoquent un blocage du bus de cache.
+\noindent A partir de 7 threads néanmoins, les changements de contextes deviennent obligatoires. Cela peut impacter la performance de plusieurs manières. La première provient du fait que comme les spinlocks ne sont pas implémentés au niveau du noyaux, le scheduler peut décider de préempter un thread se situant dans sa section critique. Ce qui empêcherait donc le programme d'avancer dans son travail. Le second impact provient du fait que les changements de contextes devront très fréquemment s'effectuer lors de l'exécution d'instructions \texttt{xchg}. Or un changement de contexte nécessite la restauration des variables globales du thread ainsi que des ses registres \texttt{\%esp, \%eip} etc, ce qui ne peut s'effectuer parallèlement aux instructions atomiques car celles-ci provoquent un blocage du bus de cache.
 
 \noindent Au vu des meilleures performances des mutex TATAS, j'ai choisi d'implémenter les sémaphores sur base de ceux-ci.
 \section{Problème des philosophes}
