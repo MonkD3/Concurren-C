@@ -54,7 +54,7 @@ ax.set_ylim(bottom=0, top = 1.1*(mean.max() + std.max()))
 # Plot the graph of means
 ax.set_title("Temps moyen pour n threads")
 for legend, mes, stdd in zip(args.legend, mean, std):
-    ax.errorbar(range(len(header)), mes, yerr=stdd, fmt='.-', capsize=3, label=legend)
+    ax.errorbar(range(len(header)), mes, yerr=stdd, fmt='.-', capsize=5, label=legend)
 ax.legend()
 
 # Save the figure in pdf

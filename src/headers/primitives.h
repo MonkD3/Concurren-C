@@ -37,7 +37,8 @@ typedef struct {
 spinsem_t* init_spinsem(int state); // Initialise une nouvelle semaphore à l'aide d'un spinlock
 void destroy_spinsem(spinsem_t*); // Libère la mémoire allouée pour une sémaphore
 
-int wait_spinsem(spinsem_t*); // Attend sur la sémaphore 
+int wait_spinsem_tas(spinsem_t*); // Attend sur la sémaphore de type tas
+int wait_spinsem_tatas(spinsem_t*); // Attend sur la sémaphore de type TATAS
 int post_spinsem(spinsem_t*); // Poste la sémaphore
 
 

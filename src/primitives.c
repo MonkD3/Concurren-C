@@ -97,7 +97,23 @@ void destroy_spinsem(spinsem_t* spinsem){
 }
 
 
-int wait_spinsem(spinsem_t* spinsem){
+int wait_spinsem_tas(spinsem_t* spinsem){
+
+    while (1){
+        lock_tas(spinsem->spinlock);
+        if (spinsem->state <= 0){
+            unlock_spinlock(spinsem->spinlock);
+            continue;
+        }
+        spinsem->state--;
+        unlock_spinlock(spinsem->spinlock);
+        break;
+    }
+
+    return 0;
+}
+
+int wait_spinsem_tatas(spinsem_t* spinsem){
 
     while (1){
         lock_tatas(spinsem->spinlock);
@@ -233,9 +249,11 @@ int wait(semaphore_t* sem){
     case POSIX:
         err = sem_wait(sem->posix);
         break;
-    case TAS: // Les sémaphores sont implémentées en utilisant l'algorithme TATAS
+    case TAS: 
+        err = wait_spinsem_tas(sem->spinsem);
+        break;
     case TATAS:
-        err = wait_spinsem(sem->spinsem);
+        err = wait_spinsem_tatas(sem->spinsem);
         break;
     }
 

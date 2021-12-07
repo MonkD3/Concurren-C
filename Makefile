@@ -45,23 +45,26 @@ benchmark: bench_philo bench_rdwrt bench_pc bench_spin
 # Individual benchmarks
 bench_philo: philosophes
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_posix.csv 1 "POSIX"
+	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tas.csv 1 "TAS"
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tatas.csv 1 "TATAS"
-	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tatas.csv \
-				   --legend "mutex POSIX" "mutex TATAS" \
+	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tas.csv $(DATAOUT)/$^_tatas.csv \
+				   --legend "mutex POSIX" "mutex TAS" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
 
 bench_rdwrt: readwrt
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_posix.csv 2 "POSIX"
+	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tas.csv 2 "TAS"
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tatas.csv 2 "TATAS"
-	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tatas.csv \
-				   --legend "mutex POSIX" "mutex TATAS" \
+	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tas.csv $(DATAOUT)/$^_tatas.csv \
+				   --legend "mutex POSIX" "mutex TAS" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
 
 bench_pc: prodcons
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_posix.csv 2 "POSIX"
+	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tas.csv 2 "TAS"
 	bash $(BENCHMARK) $(BUILDDIR)/$^ $(DATAOUT)/$^_tatas.csv 2 "TATAS"
-	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tatas.csv \
-				   --legend "mutex POSIX" "mutex TATAS" \
+	$(PY) $(GRAPH) --datapath $(DATAOUT)/$^_posix.csv $(DATAOUT)/$^_tas.csv $(DATAOUT)/$^_tatas.csv \
+				   --legend "mutex POSIX" "mutex TAS" "mutex TATAS" \
 				   --graphpath $(GRAPHOUT)/$^ \
 
 bench_spin: spinlock 
