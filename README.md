@@ -1,5 +1,22 @@
 # concurren-C
 
+## Disclaimer
+
+Ce projet a reçu la note de 21/20 (le point supplémentaire provient d'un makefile fonctionnel). Il est donc raisonnable de dire qu'il est de qualité. 
+
+Les commentaires suivants ont été fait par le correcteur :
+
+Points positifs :
+
+* Très bon Makefile et README + bonne pratique de donner les spécifications de la machine lorsque l'on effectue des tests de performance.
+* Code clair, bien organisé et bien commenté.
+* Rapport clair avec beaucoup de lien avec les apprentissages du cours.
+
+Points négatifs :
+* Il n'est pas nécéssaire d'utiliser ``xchg`` dans la fonction ``unlock`` et cela influence légèrement les résultats.
+
+___
+
 ## Introduction 
 Ce projet contient de nombreux fichiers permettant d'analyser les performances de plusieurs algorithmes classiques de synchronisations :
 * Le problème des philosophes
