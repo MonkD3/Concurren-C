@@ -1,4 +1,31 @@
 # concurren-C
+___
+
+## Summary 
+
+The goal of the project was to write and analyse the behaviour of 3 synchronization algorithms :
+
+* The Dining philosophers problem
+* The Producer-Consumer problem
+* The Reader-Writer problem
+
+The variables analysed were the number of thread (going from 1 to twice the core count of the machine) as well as the type of synchronization primitives used (POSIX mutexes and semaphore of self-implementation of spinlocks and semaphore built on them).
+
+In addition, the code is _generic_, meaning that the same code is used for both primitives. This is possible through the use of structures using _unions_ of the form :
+
+```c
+typedef struct {
+  algo_t type;
+  union {
+    pthread_mutex_t* posix;
+    spinlock_t* spinlock;
+  };
+} mutex_t;
+```
+
+where `algo_t type` is the type of algorithms used and the union contains the according primitive. This method allows to write readable and extensible code.
+
+___
 
 ## Disclaimer
 
@@ -81,7 +108,7 @@ La fonction d'initialisation prend un pointeur vers un ``mutex_t`` ainsi qu'un i
 Les fonctions ``lock()`` et ``unlock()`` sont les parties les plus importantes de cette interface. Elles prennent en argument un pointeur vers un ``mutex_t``, regardent la valeur de ``mutex_t->type`` et effectuent les appels aux fonctions de la librairie ``<pthread.h>`` si le mutex est de type POSIX ou aux fonctions de ``"primitives.h"`` si le mutex est de type TAS ou TATAS. 
 
 ### Interface des sémaphores
-
+ 
 De la même manière, la structure *semaphore_t* comprend un *algo_t* et une *union* de cette forme :
 ```c
 typedef struct {
@@ -101,19 +128,21 @@ Les fonctions ``wait()`` et ``post()`` observent la valeur ``type`` de la ``sema
 ## Structure du projet :
 
 Le projet contient de nombreux fichiers :
-* ``benchmark`` : Contient les fichiers relatifs aux tests de performances. Il y'a donc le fichier bash d'automatisation des tests de performances, le fichier python permettant de plot les graphes ainsi que les données brutes au format ``.csv``
-* ``report`` : Contient les fichiers ``.tex`` utilisé pour l'écriture du rapport
-* ``build`` : C'est à cet endroit que les exécutables sont placés lors de la compilation
-* ``src`` : Contient tous les fichiers sources et headers nécessaires à la compilation des éxécutables
-  - ``cmnfunc`` : implémente les fonctions communes à plusieurs des exécutables
-  - ``primitives`` : implémente les primitives de synchronisation ainsi qu'une interface facilitant l'utilisation des différents paramètres (cette interface est décrite ci-dessus)
-  - ``philosophes`` : implémente le problème des philosophes
-  - ``prodcons`` : implémente le problème des producteurs-consommateurs
-  - ``readwrt`` : implémente le problème des lecteurs-écrivains
-  - ``spinlock`` : implémente les tests des primitives de synchronisation définies dans ``primitives``
+
+* [``benchmark``](./benchmark) : Contient les fichiers relatifs aux tests de performances. Il y'a donc le fichier bash d'automatisation des tests de performances, le fichier python permettant de plot les graphes ainsi que les données brutes au format ``.csv``
+* [``report``](./report) : Contient les fichiers ``.tex`` utilisé pour l'écriture du rapport
+* [``build``](./build) : C'est à cet endroit que les exécutables sont placés lors de la compilation
+* [``src``](./src) : Contient tous les fichiers sources et headers nécessaires à la compilation des éxécutables
+  - [``cmnfunc``](./src/cmnfunc.c) : implémente les fonctions communes à plusieurs des exécutables
+  - [``primitives``](./src/primitives.c) : implémente les primitives de synchronisation ainsi qu'une interface facilitant l'utilisation des différents paramètres (cette interface est décrite ci-dessus)
+  - [``philosophes``](./src/philosophes.c) : implémente le problème des philosophes
+  - [``prodcons``](./src/prodcons.c) : implémente le problème des producteurs-consommateurs
+  - [``readwrt``](./src/readwrt.c) : implémente le problème des lecteurs-écrivains
+  - [``spinlock``](./src/spinlock.c) : implémente les tests des primitives de synchronisation définies dans ``primitives``
 * Le Makefile permettant d'automatiser les tâches de développements et de testing, ces cibles sont définies ci-dessous.
-* ``README.md`` : Ce README
-* ``rapport.pdf`` : Le rapport sur l'évaluation des performances
+* [``README.md``](./README.md) : Ce README
+* [``rapport.pdf``](./rapport.pdf) : Le rapport sur l'évaluation des performances
+
 ## Cibles du Makefile
 
 - (cible par défaut) ``all`` : compile tous les exécutables.

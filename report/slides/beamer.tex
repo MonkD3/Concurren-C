@@ -1,0 +1,182 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multicol}
+
+% C style code linting : https://tex.stackexchange.com/questions/348651/c-code-to-add-in-the-document
+\usepackage{xcolor}
+\usepackage{listings}
+
+\definecolor{mGreen}{rgb}{0,0.6,0}
+\definecolor{mGray}{rgb}{0.5,0.5,0.5}
+\definecolor{mPurple}{rgb}{0.58,0,0.82}
+\definecolor{backgroundColour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{CStyle}{
+    backgroundcolor=\color{backgroundColour},
+    commentstyle=\color{mGreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{mGray},
+    stringstyle=\color{mPurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    language=C
+}
+
+% Change beamer theme to fit the needs
+\usetheme{Boadilla}
+\setbeamertemplate{footline}{}
+\setbeamertemplate{itemize items}[default]
+\setbeamertemplate{enumerate items}[default]
+
+
+% Add COLORS
+\newcommand{\textblue}[1]{\textbf{\textcolor{blue}{#1}}}
+
+
+\title{Presentation of recent work}
+\subtitle{Analysis of synchronization algorithm}
+\author{Tihon Nathan}
+\date{\today}
+
+\addtobeamertemplate{navigation symbols}{}{%
+    \usebeamerfont{footline}%
+    \usebeamercolor[fg]{footline}%
+    \hspace{1em}%
+    \insertframenumber/\inserttotalframenumber%
+}
+
+\begin{document}
+
+% Première page
+\begin{frame}{\titlepage}
+\end{frame}
+
+
+
+\begin{frame}{The goal of the course}
+
+  There was multiple topics to the course, although the following were the most important:
+
+  \bigskip
+
+  \begin{itemize}
+    \item Study the roles and functions of an operating system
+    \item Study the concepts, problems and solutions of processes and threads
+    \item Usage of multiprocessor machines
+  \end{itemize}
+
+  \bigskip
+
+  I like to think of this course as \textblue{a link between software and hardware}.
+
+\end{frame}
+
+\begin{frame}{Goal of the project}
+
+  The goal of the project was to \textblue{write and analyse} the behaviour of 3 standard synchronization algorithms:
+
+  \bigskip
+
+  \begin{itemize}
+    \item The Dining Philosophers problem
+    \item The Producer-Consumer problem
+    \item The Reader-Writer problem
+  \end{itemize}
+
+  \bigskip
+
+  with regard to \textblue{the number of threads} and \textblue{the type of synchronization primitives}.
+
+  \bigskip
+
+  If we break it down to its first principles, the main goal of the project was to analyse the cost of the \texttt{xchg} instruction.
+
+\end{frame}
+
+\begin{frame}{Types of primitives}
+  \begin{block}{Primitives}
+    The comparison of synchronization primitives was done between:
+    \begin{itemize}
+            \item POSIX mutexes and semaphores
+            \item My own ASM implementation of spinlock and semaphores built on top of them
+    \end{itemize}
+  \end{block}
+
+  \bigskip
+
+  I implemented two types of spinlock:
+
+  \bigskip
+
+  \begin{itemize}
+    \item One based on the \textblue{test-and-set} algorithm
+    \item The other based on the \textblue{test-and-test-and-set} algorithm
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Results of the project}
+
+  \begin{block}{Observation}
+    The importants observations made during this project is that \textblue{\texttt{xchg} is a costly operation} and we must use it cautiously.
+  \end{block}
+
+  \bigskip
+
+  \begin{block}{Performance}
+    But active primitives perform better then POSIX primitives \textblue{when the waiting time is short}, this is because POSIX primitives are ''put on sleep'' and needs to be waken up, which also has a cost.
+  \end{block}
+
+
+\end{frame}
+
+
+\begin{frame}{Naive implementation}
+
+  \begin{block}{Simplest implementation}
+    What most of my colleagues opted for is to duplicate the code and write each of the algorithms separately.
+  \end{block}
+
+  \bigskip
+
+  While fast/easy to write, this method comes with a strong downside:
+
+  \bigskip
+
+  \begin{block}{Readability/extensibility}
+    This method makes it very hard to navigate, read and extend the code.
+  \end{block}
+
+\end{frame}
+
+\begin{frame}[containsverbatim]
+\frametitle{Extensible implementation}
+
+  The extensible implementation I opted for relies on the use of \textblue{unions nested in structs}
+
+  \bigskip
+
+  \begin{lstlisting}[style=CStyle]
+typedef struct {
+  algo_t type; // Type of mutex: 0=>POSIX, 1=>TAS, 2=>TATAS
+  union {
+    pthread_mutex_t* posix;
+    spinlock_t* spinlock;
+  }; // Use the type of mutex corresponding to type
+} mutex_t;
+  \end{lstlisting}
+
+\end{frame}
+
+\end{document}

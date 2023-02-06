@@ -68,7 +68,7 @@ int main ( int argc, char *argv[]){
     if (baguettes == NULL) error(0, "malloc");
     for (i = 0; i < n_philo; i++){
         err = init_mutex(&baguettes[i], algo);
-        if (&baguettes[i] == NULL) error(0, "init_mutex");
+        if (err) error(err, "init_mutex");
     }
 
 
